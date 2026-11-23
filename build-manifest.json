@@ -1,0 +1,20 @@
+{
+  "product": "Lead Database Manager",
+  "version": "0.1.2",
+  "stage": "1 + live Telegram test layer",
+  "stages_total": 12,
+  "build_date": "2026-11-22",
+  "runtime": "Cloudflare Workers + D1 + Durable Object (SQLite) + Static Assets",
+  "entrypoint": "src/index.js",
+  "migrations": ["0001_stage1_prototype.sql", "0002_live_telegram_test.sql"],
+  "required_secrets": ["ADMIN_TOKEN", "APP_SECRET"],
+  "optional_secrets": ["TELEGRAM_API_ID", "TELEGRAM_API_HASH", "TELEGRAM_BOT_TOKEN", "TELEGRAM_WEBHOOK_SECRET", "SETUP_TOKEN"],
+  "tests": [
+    "Developer-side: node --test tests/*.test.js (33 tests)",
+    "Developer-side: python3 tests/sqlite_schema_test.py",
+    "Developer-side: node tests/ui_harness.mjs 8799 & python3 tests/ui_e2e.py (12 browser steps)"
+  ],
+  "verified_against_real_telegram": false,
+  "user_local_installation_required": false,
+  "local_preview_entrypoint": "START_HERE.html"
+}

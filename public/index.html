@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Lead Database Manager</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./qr.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="gate" id="gate" hidden>
+    <form class="gate-card" id="gateForm" autocomplete="off">
+      <div class="brand-mark"><span></span><span></span><span></span></div>
+      <h2>Вход в систему</h2>
+      <p>Введите ключ доступа — значение секрета <code>ADMIN_TOKEN</code>, которое вы задали в Cloudflare.</p>
+      <label for="gateKey">Ключ доступа</label>
+      <input id="gateKey" type="password" autocomplete="current-password" placeholder="Ключ доступа" required>
+      <button class="button button-primary" type="submit" id="gateButton">Войти</button>
+      <div class="result-message error" id="gateError" role="alert"></div>
+    </form>
+  </div>
+
+  <div class="shell" id="shell" hidden>
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark"><span></span><span></span><span></span></div>
+        <div><strong>Lead Database</strong><small>MANAGER · 0.1.2</small></div>
+      </div>
+      <nav class="nav">
+        <div class="nav-label">РАБОЧАЯ ОБЛАСТЬ</div>
+        <a class="nav-item" href="#overview" data-nav="overview"><span class="nav-icon">◫</span> Обзор</a>
+        <a class="nav-item" href="#account" data-nav="account"><span class="nav-icon">✳</span> Аккаунт Telegram</a>
+        <a class="nav-item" href="#monitor" data-nav="monitor"><span class="nav-icon">◎</span> Мониторинг</a>
+        <a class="nav-item" href="#leads" data-nav="leads"><span class="nav-icon">▤</span> Тестовая база</a>
+        <div class="nav-label nav-label-gap">СКОРО</div>
+        <a class="nav-item disabled" aria-disabled="true"><span class="nav-icon">▦</span> Разделы <em>этап 6</em></a>
+        <a class="nav-item disabled" aria-disabled="true"><span class="nav-icon">⇩</span> Импорт / экспорт <em>этап 7</em></a>
+        <a class="nav-item disabled" aria-disabled="true"><span class="nav-icon">↗</span> Авто-чат <em>этап 9</em></a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="side-status"><i></i><span id="sideStatus">Проверка…</span></div>
+        <small id="sideSub">Технический прототип</small>
+        <button class="link-button" id="lockButton" type="button">Выйти из панели</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="preview-banner" id="previewBanner" hidden>Локальный предпросмотр: интерфейс открыт из файла, сервер недоступен. Кнопки не отправляют запросы. Реальная работа — после публикации в Cloudflare.</div>
+      <header class="topbar">
+        <div><div class="eyebrow" id="pageEyebrow">СИСТЕМА УПРАВЛЕНИЯ ЛИДАМИ</div><h1 id="pageTitle">Обзор</h1></div>
+        <div class="top-actions"><span class="version-chip">v0.1.2</span><button class="button button-quiet" id="refreshButton" type="button">↻ <span>Обновить</span></button></div>
+      </header>
+
+      <!-- OVERVIEW -->
+      <section class="page" data-page="overview" hidden>
+        <div class="status-grid">
+          <article class="status-card"><div class="status-card-head"><span class="status-icon database-icon">▤</span><span class="status-pill" id="dbPill">Проверка</span></div><h3>Cloudflare D1</h3><p id="dbText">Проверяем базу данных…</p><div class="status-foot"><span>Лидов в базе</span><strong id="leadCount">—</strong></div></article>
+          <article class="status-card"><div class="status-card-head"><span class="status-icon telegram-icon">➤</span><span class="status-pill" id="tgPill">Проверка</span></div><h3>Аккаунт Telegram</h3><p id="tgText">Проверяем подключение…</p><div class="status-foot"><span>Вход</span><strong id="tgWho">—</strong></div></article>
+          <article class="status-card"><div class="status-card-head"><span class="status-icon worker-icon">◎</span><span class="status-pill" id="monPill">Проверка</span></div><h3>Мониторинг чатов</h3><p id="monText">Проверяем состояние…</p><div class="status-foot"><span>Источников</span><strong id="monSources">—</strong></div></article>
+        </div>
+
+        <div class="panel section-block">
+          <div class="eyebrow">ПЕРВАЯ ПРОВЕРКА</div>
+          <h2>Путь от пустой системы до Excel-файла</h2>
+          <ol class="checklist" id="checklist"></ol>
+        </div>
+
+        <details class="panel section-block">
+          <summary>Telegram-бот из этапа 1 (необязательно)</summary>
+          <p class="panel-text">Бот принимает лидов, которые сами написали ему и дали согласие. Для проверки аккаунта и мониторинга он не нужен.</p>
+          <div class="setup-form flush"><label for="setupToken">Ключ настройки (SETUP_TOKEN)</label><div class="input-row"><input id="setupToken" type="password" autocomplete="off" placeholder="Введите ключ настройки"><button id="registerButton" class="button" type="button">Зарегистрировать webhook</button></div></div>
+          <div id="setupResult" class="result-message flush" role="status" aria-live="polite"></div>
+        </details>
+      </section>
+
+      <!-- ACCOUNT -->
+      <section class="page" data-page="account" hidden>
+        <div class="panel">
+          <div class="panel-head"><div><div class="eyebrow">ШАГ 1</div><h2>Ключи приложения Telegram</h2></div><span class="status-pill" id="credsPill">—</span></div>
+          <p class="panel-text">Telegram требует, чтобы программа, входящая в аккаунт, имела свои ключи. Они бесплатные: откройте <code>my.telegram.org</code> → войдите по номеру → <b>API development tools</b> → создайте приложение (название любое) → скопируйте <b>api_id</b> и <b>api_hash</b>.</p>
+          <form class="form-row" id="credsForm" autocomplete="off">
+            <div class="field"><label for="apiId">api_id</label><input id="apiId" inputmode="numeric" placeholder="1234567" autocomplete="off"></div>
+            <div class="field grow"><label for="apiHash">api_hash</label><input id="apiHash" type="password" placeholder="32 символа" autocomplete="off"></div>
+            <button class="button" type="submit" id="credsButton">Сохранить</button>
+          </form>
+          <small class="hint" id="credsHint">Ключи хранятся на сервере в зашифрованном виде и никогда не возвращаются в браузер.</small>
+        </div>
+
+        <div class="panel section-block">
+          <div class="panel-head"><div><div class="eyebrow">ШАГ 2</div><h2>Подключение аккаунта</h2></div><span class="status-pill" id="loginPill">—</span></div>
+          <div id="loginBody"></div>
+        </div>
+
+        <div class="panel section-block">
+          <div class="panel-head"><div><div class="eyebrow">ЕСЛИ ЧТО-ТО НЕ РАБОТАЕТ</div><h2>Диагностика соединения</h2></div><button class="button" id="diagButton" type="button">Запустить проверку</button></div>
+          <p class="panel-text">Проверяет по очереди: настройки сервера, базу, загрузку библиотеки Telegram, сетевое соединение и шифрованное рукопожатие. Каждый шаг показывает, где именно остановка.</p>
+          <ul class="diag-list" id="diagList"></ul>
+        </div>
+
+        <div class="notice wide"><span class="notice-mark">i</span><p>Подключённый аккаунт — это обычный вход «как с ещё одного устройства». Для тестов лучше использовать отдельный или запасной аккаунт: Telegram может ограничить аккаунт, если он ведёт себя как робот (частые запросы, массовые действия). Текущая версия только читает выбранные чаты и ничего не пишет и не меняет в аккаунте.</p></div>
+      </section>
+
+      <!-- MONITOR -->
+      <section class="page" data-page="monitor" hidden>
+        <div class="two-col">
+          <div class="panel">
+            <div class="eyebrow">ШАГ 3</div><h2>Что искать</h2>
+            <form id="rulesForm">
+              <div class="field"><label for="keywords">Ключевые слова — по одному на строку или через запятую</label><textarea id="keywords" rows="5" placeholder="куплю&#10;оптом&#10;ищу поставщика"></textarea></div>
+              <label class="check"><input type="checkbox" id="matchAny"> <span>Любое сообщение считать подходящим (только для проверки связи)</span></label>
+              <div class="form-row tight"><div class="field"><label for="interval">Проверять каждые, сек</label><input id="interval" type="number" min="15" max="3600" value="30"></div><button class="button" type="submit">Сохранить условия</button></div>
+              <small class="hint">Поиск без учёта регистра и буквы «ё»; ищется часть слова («куплю» найдёт «куплю оптом»).</small>
+            </form>
+          </div>
+          <div class="panel">
+            <div class="eyebrow">ШАГ 4</div><h2>Запуск</h2>
+            <div class="run-state" id="runState"></div>
+            <div class="form-row tight"><button class="button button-primary" id="runToggle" type="button">Запустить мониторинг</button></div>
+            <hr class="sep">
+            <h3>Проверить прямо сейчас</h3>
+            <p class="panel-text">Читает последние сообщения выбранных чатов и сразу применяет условия — удобно, чтобы убедиться, что всё работает, не дожидаясь новых сообщений.</p>
+            <div class="form-row tight"><div class="field"><label for="backfill">Последних сообщений в каждом чате</label><input id="backfill" type="number" min="1" max="200" value="50"></div><button class="button" id="checkNow" type="button">Проверить</button></div>
+            <div class="result-box" id="checkResult" role="status" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div class="panel section-block">
+          <div class="panel-head"><div><div class="eyebrow">ИСТОЧНИКИ</div><h2>Какие чаты слушаем</h2></div><button class="button" id="loadDialogs" type="button">Выбрать из моих чатов</button></div>
+          <p class="panel-text">Для канала читаются комментарии — они живут в привязанной группе обсуждения. Сообщения самого канала лидов не дают: их публикует канал.</p>
+          <div class="table-wrap"><table class="data-table"><thead><tr><th>Название</th><th>Тип</th><th>Читаем</th><th>Прочитано</th><th>Последняя проверка</th><th></th></tr></thead><tbody id="sourcesBody"></tbody></table></div>
+          <div class="dialog-picker" id="dialogPicker" hidden>
+            <div class="picker-head"><strong>Ваши чаты</strong><input id="dialogFilter" type="search" placeholder="Фильтр по названию"></div>
+            <ul class="picker-list" id="dialogList"></ul>
+          </div>
+        </div>
+
+        <div class="panel section-block">
+          <div class="eyebrow">ЖУРНАЛ</div><h2>Последние события</h2>
+          <ul class="log-list" id="logList"></ul>
+        </div>
+      </section>
+
+      <!-- LEADS -->
+      <section class="page" data-page="leads" hidden>
+        <div class="panel">
+          <div class="panel-head">
+            <div><div class="eyebrow">ТЕСТОВАЯ БАЗА</div><h2>Найденные пользователи <span class="count-chip" id="leadsTotal">0</span></h2></div>
+            <div class="top-actions"><button class="button button-primary" id="exportButton" type="button">⇩ Скачать Excel</button><button class="button button-danger" id="clearButton" type="button">Очистить</button></div>
+          </div>
+          <div class="form-row tight"><div class="field grow"><label for="leadSearch">Поиск по имени, нику, телефону, источнику или тексту</label><input id="leadSearch" type="search" placeholder="Начните вводить…"></div><div class="field"><label for="pageSize">На странице</label><select id="pageSize"><option>25</option><option>50</option><option>100</option></select></div></div>
+          <div class="table-wrap"><table class="data-table"><thead><tr><th>Имя</th><th>Ник</th><th>Телефон</th><th>Источник</th><th>Добавлен</th><th>Сообщение-триггер</th></tr></thead><tbody id="leadsBody"></tbody></table></div>
+          <div class="empty" id="leadsEmpty" hidden></div>
+          <div class="pager"><button class="button button-quiet" id="prevPage" type="button">← Назад</button><span id="pageInfo">—</span><button class="button button-quiet" id="nextPage" type="button">Вперёд →</button></div>
+        </div>
+      </section>
+
+      <footer class="footer"><span>LEAD DATABASE MANAGER</span><span>Сборка 0.1.2 · 22.11.2026</span></footer>
+    </main>
+  </div>
+
+  <dialog class="modal" id="modal"><form method="dialog"><h3 id="modalTitle"></h3><p id="modalText"></p><div class="modal-actions"><button class="button button-quiet" value="cancel">Отмена</button><button class="button button-danger" value="ok" id="modalOk">Подтвердить</button></div></form></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
