@@ -14,7 +14,7 @@
     {
       "binding": "DB",
       "database_name": "lead-database-manager",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "65cb033c-efd4-4dea-a577-0e6d8b420b1b",
       "migrations_dir": "migrations"
     }
   ],
